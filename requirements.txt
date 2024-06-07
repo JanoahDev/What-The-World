@@ -1,0 +1,15 @@
+opencv-python
+ultralytics
+
+python-dotenv
+langchain
+langchainhub
+langchain_openai
+wikipedia
+langchain-community
+google-api-python-client
+
+diffusers==0.23.1
+transformers
+torch
+flax
