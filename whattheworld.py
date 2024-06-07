@@ -6,6 +6,14 @@ import base64
 import math
 from ultralytics import YOLO
 
+# Imports for langchain
+import os
+from dotenv import load_dotenv
+from langchain.schema import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
+
+
+
 # Start the webcam
 cap = cv2.VideoCapture(1)
 cap.set(3, 640)
@@ -28,7 +36,7 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
 
 
 # Insert API URL here
-api_url = 'https://qbwvbikcp6d37t-5000.proxy.runpod.net/generate'
+api_url = 'https://h68t49873nvicf-5000.proxy.runpod.net/generate'
 
 
 # Function that calls the api with a prompt and returns the image
@@ -41,6 +49,57 @@ def get_image_from_api(prompt):
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     return img
 
+
+## --- LANGCHAIN FUNCTIONALITY --- ##
+
+# Set the OPENAI_API_KEY environment variable
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+# Init the Large Language Model
+llm = ChatOpenAI(temperature=0.5, openai_api_key=openai_api_key)
+
+
+# Function that calls the describer agent
+def agent_that_describes(prompt):
+    string = prompt
+
+    # Create the conversation
+    message = [
+        SystemMessage(content="We have pointed a camera into a space. A user will input what it sees inside a space. Describe what you see"),
+        HumanMessage(content=string)
+    ]
+
+    # Invoke the Large Language Model:
+    result = llm.invoke(message)
+
+    # Extract the content from the result
+    content = result.content
+
+    return content
+
+
+# Function that calls the describer agent
+def agent_that_creates(prompt):
+    string = prompt
+
+    # Create the conversation
+    message = [
+        SystemMessage(content="You get a description of what is happening inside a room. Create an abstract narrative based on the description."),
+        HumanMessage(content=string)
+    ]
+
+    # Invoke the Large Language Model:
+    result = llm.invoke(message)
+
+    # Extract the content from the result
+    content = result.content
+
+    return content
+
+
+
+# Variables for timing
 last_update_time = 0
 generated_image = None
 
@@ -72,7 +131,15 @@ while True:
 
     # Create a string which gives a summary of the objects detected
     output_string = (" and ".join([f"there are {count} {name}(s)" for name, count in unique_objects.items()]))
-    print(output_string)
+    print("Detected object string: " + output_string)
+
+    # Get the description from the agent
+    output_string = agent_that_describes(output_string)
+    print("Agent generated string: " + output_string)
+
+    # Get the description from the agent
+    output_string = agent_that_creates(output_string)
+    print("Creative agent generated string: " + output_string)
 
     # Update the image every 5 seconds
     current_time = time.time()

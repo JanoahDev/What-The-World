@@ -9,7 +9,5 @@ wikipedia
 langchain-community
 google-api-python-client
 
-diffusers==0.23.1
 transformers
 torch
-flax
