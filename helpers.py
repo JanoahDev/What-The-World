@@ -10,6 +10,8 @@ from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
+
+
 ## --- Diffusion Functionality --- ##
 
 #Create the api url based on the Runpod ID
@@ -24,7 +26,6 @@ def get_image_from_api(prompt):
     nparr = np.frombuffer(img_data, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     return img
-
 
 
 
@@ -62,7 +63,7 @@ def agent_that_creates(prompt):
 
     # Create the conversation
     message = [
-        SystemMessage(content="You get a description of what is happening inside a room. Create an abstract narrative of about 3 scentences based on the description. This will act as the prompt for a diffusion model which will generate an art frame based on the narrative."),
+        SystemMessage(content="You get a description of what is happening inside a room. Create an abstract narrative of max 77 characters. This will act as the prompt for a diffusion model which will generate an art frame based on the narrative."),
         HumanMessage(content=string)
     ]
 
@@ -73,3 +74,7 @@ def agent_that_creates(prompt):
     content = result.content
 
     return content
+
+
+
+## ---  --- ##
