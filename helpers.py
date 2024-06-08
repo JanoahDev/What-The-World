@@ -1,110 +1,75 @@
+import requests
 import cv2
-import random
+import numpy as np
+import base64
+import os
+from dotenv import load_dotenv
 
-def draw_boxes(image, boxes, confidences, class_ids, classes, color_map):
-    """
-    Draw bounding boxes on the image.
+from langchain.schema import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 
-    Parameters:
-    - image: The image on which to draw.
-    - boxes: List of bounding boxes, each represented as [x, y, width, height].
-    - confidences: List of confidences for each bounding box.
-    - class_ids: List of class IDs for each bounding box.
-    - classes: List of class names corresponding to class IDs.
-    """
-    font_scale = 2  # Increased font scale
-    thickness = 3  # Increased thickness for the text
-    font_color = (255, 255, 255)  # Changed font color to black
+load_dotenv()
 
-    for i in range(len(boxes)):
-        x, y, w, h = boxes[i]
-        label = str(classes[class_ids[i]])
-        confidence = confidences[i]
-        color = color_map[class_ids[i]]
-        cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
-        text = f"{label}: {confidence:.2f}"
-        (text_width, text_height), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
-        cv2.rectangle(image, (x, y - text_height - baseline), (x + text_width, y), color, -1)
-        cv2.putText(image, text, (x, y - baseline), cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_color, thickness)
+## --- Diffusion Functionality --- ##
+
+#Create the api url based on the Runpod ID
+api_url = "https://"+os.getenv("RUNPOD_ID")+"-5000.proxy.runpod.net/generate"
+
+# Function that calls the api with a prompt and returns the image
+def get_image_from_api(prompt):
+    response = requests.post(api_url, json={'prompt': prompt})
+    data = response.json()
+    img_str = data['image_url'].split(",")[1]
+    img_data = base64.b64decode(img_str)
+    nparr = np.frombuffer(img_data, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    return img
 
 
 
-def predict(chosen_model, img, classes=[], conf=0.5):
-    """
-    chosen_model: The trained model to use for prediction
-    img: The image to make a prediction on
-    classes: (Optional) A list of class names to filter predictions to
-    conf: (Optional) The minimum confidence threshold for a prediction to be considered
 
-    The conf argument is used to filter out predictions with a confidence score lower than the specified threshold. This is useful for removing false positives.
+## --- Langchain Functionality --- ##
 
-    The function returns a list of prediction results, where each result contains the following information:
+# Set the OPENAI_API_KEY environment variable
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
-    name: The name of the predicted class
-    conf: The confidence score of the prediction
-    box: The bounding box of the predicted object
-    """
-    if classes:
-        results = chosen_model.predict(img, classes=classes, conf=conf)
-    else:
-        results = chosen_model.predict(img, conf=conf)
+# Init the Large Language Model
+llm = ChatOpenAI(temperature=0.5, openai_api_key=openai_api_key)
 
-    return results
 
-def generate_color_map(num_classes):
-    """
-    Generate a color map for the given number of classes.
+# Function that calls the describer agent
+def agent_that_describes(prompt):
+    string = prompt
 
-    Parameters:
-    - num_classes: The number of classes.
+    # Create the conversation
+    message = [
+        SystemMessage(content="We have pointed a camera into a space. A user will input what it sees inside a space. Describe what you see"),
+        HumanMessage(content=string)
+    ]
 
-    Returns:
-    - A dictionary mapping class IDs to colors.
-    """
-    random.seed(42)  # For reproducibility
-    color_map = {}
-    for i in range(num_classes):
-        color_map[i] = [random.randint(0, 255) for _ in range(3)]
-    return color_map
+    # Invoke the Large Language Model:
+    result = llm.invoke(message)
 
-# predict_and_detect function
-def predict_and_detect(chosen_model, img, classes=[], conf=0.5):
-  """
-  Predicts and detects objects in an image using a chosen model.
+    # Extract the content from the result
+    content = result.content
 
-  Args:
-    chosen_model: The model used for prediction and detection.
-    img: The input image.
-    classes: Optional list of class names. If provided, only objects from these classes will be detected.
-    conf: Optional confidence threshold for object detection. Defaults to 0.5.
+    return content
 
-  Returns:
-    img: The input image with bounding boxes drawn around detected objects.
-    results: The results of the prediction and detection.
-  """
-  # Predict objects in the image
-  results = predict(chosen_model, img, classes, conf=conf)
 
-  # Prepare lists to pass to the draw_boxes function
-  boxes = []
-  confidences = []
-  class_ids = []
-  classes = chosen_model.names  # Get the actual class names from the model
+# Function that calls the describer agent
+def agent_that_creates(prompt):
+    string = prompt
 
-  # Generate a color map for the classes
-  color_map = generate_color_map(len(classes))
+    # Create the conversation
+    message = [
+        SystemMessage(content="You get a description of what is happening inside a room. Create an abstract narrative of about 3 scentences based on the description. This will act as the prompt for a diffusion model which will generate an art frame based on the narrative."),
+        HumanMessage(content=string)
+    ]
 
-  # Extract bounding box coordinates, confidences, and class IDs from the results
-  for result in results:
-    #print(result)
-    for box in result.boxes:
-      x1, y1, x2, y2 = box.xyxy[0]  # Extract xyxy format
-      x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-      boxes.append([x, y, w, h])
-      confidences.append(box.conf[0].item())
-      class_ids.append(int(box.cls[0].item()))
+    # Invoke the Large Language Model:
+    result = llm.invoke(message)
 
-  # Draw bounding boxes on the image
-  draw_boxes(img, boxes, confidences, class_ids, classes, color_map)
+    # Extract the content from the result
+    content = result.content
 
-  return img, results
+    return content

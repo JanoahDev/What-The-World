@@ -1,16 +1,11 @@
 import time
-import requests
 import cv2
 import numpy as np
-import base64
 import math
 from ultralytics import YOLO
 
-# Imports for langchain
-import os
-from dotenv import load_dotenv
-from langchain.schema import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+# Import the helper functions
+from helpers import get_image_from_api, agent_that_describes, agent_that_creates
 
 
 
@@ -33,70 +28,6 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone",
               "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
               "teddy bear", "hair drier", "toothbrush"]
-
-
-# Insert API URL here
-api_url = 'https://9qev3mrpk8fs7j-5000.proxy.runpod.net/generate'
-
-
-# Function that calls the api with a prompt and returns the image
-def get_image_from_api(prompt):
-    response = requests.post(api_url, json={'prompt': prompt})
-    data = response.json()
-    img_str = data['image_url'].split(",")[1]
-    img_data = base64.b64decode(img_str)
-    nparr = np.frombuffer(img_data, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    return img
-
-
-## --- LANGCHAIN FUNCTIONALITY --- ##
-
-# Set the OPENAI_API_KEY environment variable
-load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
-
-# Init the Large Language Model
-llm = ChatOpenAI(temperature=0.5, openai_api_key=openai_api_key)
-
-
-# Function that calls the describer agent
-def agent_that_describes(prompt):
-    string = prompt
-
-    # Create the conversation
-    message = [
-        SystemMessage(content="We have pointed a camera into a space. A user will input what it sees inside a space. Describe what you see"),
-        HumanMessage(content=string)
-    ]
-
-    # Invoke the Large Language Model:
-    result = llm.invoke(message)
-
-    # Extract the content from the result
-    content = result.content
-
-    return content
-
-
-# Function that calls the describer agent
-def agent_that_creates(prompt):
-    string = prompt
-
-    # Create the conversation
-    message = [
-        SystemMessage(content="You get a description of what is happening inside a room. Create an abstract narrative of about 3 scentences based on the description. This will act as the prompt for a diffusion model which will generate an art frame based on the narrative."),
-        HumanMessage(content=string)
-    ]
-
-    # Invoke the Large Language Model:
-    result = llm.invoke(message)
-
-    # Extract the content from the result
-    content = result.content
-
-    return content
-
 
 
 # Variables for timing
