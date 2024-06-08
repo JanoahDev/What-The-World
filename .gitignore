@@ -37,3 +37,6 @@ Thumbs.db
 
 # Ignore retrained models
 datasets/runs/*
+
+#Ignore videos inside of the videos folder
+video/*

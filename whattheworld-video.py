@@ -12,10 +12,13 @@ from dotenv import load_dotenv
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+# Change the path to your local video file
+video_path = "videos/1.mp4"
 
+# Start the video capture from the local video file
+cap = cv2.VideoCapture(video_path)
 
-# Start the webcam
-cap = cv2.VideoCapture(1)
+# Set the frame dimensions (if necessary)
 cap.set(3, 640)
 cap.set(4, 480)
 
@@ -34,12 +37,10 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
               "teddy bear", "hair drier", "toothbrush"]
 
-
 # Insert API URL here
-api_url = 'https://h68t49873nvicf-5000.proxy.runpod.net/generate'
+api_url = 'https://9qev3mrpk8fs7j-5000.proxy.runpod.net/generate'
 
-
-# Function that calls the api with a prompt and returns the image
+# Function that calls the API with a prompt and returns the image
 def get_image_from_api(prompt):
     response = requests.post(api_url, json={'prompt': prompt})
     data = response.json()
@@ -48,7 +49,6 @@ def get_image_from_api(prompt):
     nparr = np.frombuffer(img_data, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     return img
-
 
 ## --- LANGCHAIN FUNCTIONALITY --- ##
 
@@ -59,53 +59,44 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 # Init the Large Language Model
 llm = ChatOpenAI(temperature=0.5, openai_api_key=openai_api_key)
 
-
 # Function that calls the describer agent
 def agent_that_describes(prompt):
     string = prompt
-
     # Create the conversation
     message = [
-        SystemMessage(content="We have pointed a camera into a space. A user will input what it sees inside a space. Describe what you see"),
+        SystemMessage(content="We have pointed a camera into a museum space. You will get a description of what is detected inside the space. Describe what you see"),
         HumanMessage(content=string)
     ]
-
     # Invoke the Large Language Model:
     result = llm.invoke(message)
-
     # Extract the content from the result
     content = result.content
-
     return content
-
 
 # Function that calls the describer agent
 def agent_that_creates(prompt):
     string = prompt
-
     # Create the conversation
     message = [
-        SystemMessage(content="You get a description of what is happening inside a room. Create an abstract narrative based on the description."),
+        SystemMessage(content="You get a description of what is happening inside a room. Create a narrative of about 3 scentences based on the description. This will act as the prompt for a diffusion model which will generate an art frame based on the narrative. The prompt should include the image style which is a black & white thermal image."),
         HumanMessage(content=string)
     ]
-
     # Invoke the Large Language Model:
     result = llm.invoke(message)
-
     # Extract the content from the result
     content = result.content
-
     return content
-
-
 
 # Variables for timing
 last_update_time = 0
 generated_image = None
 
-while True:
-    success, webcam = cap.read()
-    results = model(webcam, stream=True)
+while cap.isOpened():
+    success, frame = cap.read()
+    if not success:
+        break
+
+    results = model(frame, stream=True)
 
     # Coordinates and object details
     object_details = []
@@ -114,12 +105,12 @@ while True:
         for box in boxes:
             x1, y1, x2, y2 = box.xyxy[0]
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)  # Convert to int values
-            cv2.rectangle(webcam, (x1, y1), (x2, y2), (255, 0, 255), 3)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 255), 3)
             confidence = math.ceil((box.conf[0] * 100)) / 100
             cls = int(box.cls[0])
             object_details.append((confidence, classNames[cls]))
             org = [x1, y1]
-            cv2.putText(webcam, classNames[cls], org, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+            cv2.putText(frame, classNames[cls], org, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
     # Count unique objects
     unique_objects = {}
@@ -148,20 +139,18 @@ while True:
         generated_image = get_image_from_api(prompt)
         last_update_time = current_time
 
-
-    # Resize the generated image to match the height of the webcam feed
+    # Resize the generated image to match the height of the video frame
     if generated_image is not None:
-        height, width, _ = webcam.shape
+        height, width, _ = frame.shape
         generated_image = cv2.resize(generated_image, (width, height))
 
-
-    # Display the webcam feed and the generated image side by side
+    # Display the video frame and the generated image side by side
     if generated_image is not None:
-        combined_image = np.hstack((webcam, generated_image))
+        combined_image = np.hstack((frame, generated_image))
     else:
-        combined_image = webcam
+        combined_image = frame
 
-    cv2.imshow('Webcam and Generated Image', combined_image)
+    cv2.imshow('Video and Generated Image', combined_image)
     if cv2.waitKey(1) == ord('q'):
         break
 

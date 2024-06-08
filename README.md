@@ -1,37 +1,53 @@
 # What the world?! - Digital installation
 
-In deze opdracht creëren jullie een interactieve kunstinstallatie die bezoekersgedrag in een museum analyseert en vertaalt naar dynamische kunstwerken. Je moet de camera niet echt in een museum te installeren, je kan je eigen omgeving of een foto van een museum gebruiken (ter demo).
+This is a project made for a school assigment, the objective was to create an interactive art installation that analyzes visitor behavior in a museum and translates it into dynamic artworks. We didn't actually have to install the camera inside a museum, so I made two versions of the code. One which is based on a sample video captured in a museum and one which actually is fed live video, in this case a webcam; But this could be any camera source you link it too.
 
-Tijdens de lessen hebben we geleerd te werken met YOLO voor objectherkenning, Langchain voor het maken van LLM applicaties en agents, en diffusion modellen voor het genereren van afbeeldingen (Stable Diffusion). 
+During the lessons, we learned to work with YOLO for object recognition, Langchain for creating LLM applications and agents, and diffusion models for generating images (Stable Diffusion).
 
-## Inference
+This project merges all of the above techniques together to become a digital installation.
+
+
+## Explanation of code
+
+1. 
+
+2. 
+
+
+
+## Building blocks
 
 The working model is based upon a couple of building blocks:
 
 - Detecting objects from a webcam stream -> Turn them into a string
-- Seind a string to an API which is ran on drop
+- 
+- Send a string to a diffusion API which is ran on a runpod in this case
 - ...
 
-## Training
 
-Install the needed library in conda environment
+## Training YOLO to detect new objects (optional)
+
+This code is made to work out of the box with the objects and behaviour we trained it to detect. If you wish to train it any further you can always do so following this manual:
+
+1. Install the needed library in conda environment
 
 `pip install ultralytics`
 
-Start training the model via
+2. Start training the model via
 
 `yolo detect train data=data.yaml model=yolov9c.pt epochs=10 imgsz=640 batch=8`
 
 
-## Runpod requirements
+## Runpod instructions -> Diffusion API
 
 1. Initiate a runpod with a graphics card of choice
-2. In the workspace folder, upload the 2 files from the /building_blocks/runpod_diffusion_server/ Folder
-3. From that folder, run the following commands:
-4. `chmod +x run_app.sh`
-5. `python3 -m venv venv`
-6. `source venv/bin/activate`
-7. `pip install flask transformers diffusers torch accelerate`
+2. Edit your pod and add port 5000 to the exposed HTTP list
+3. In the workspace folder, upload the 2 files from the /building_blocks/runpod_diffusion_server/ Folder
+4. From that folder, run the following commands:
+5. `chmod +x run_app.sh`
+6. `python3 -m venv venv`
+7. `source venv/bin/activate`
+8. `pip install flask transformers diffusers torch accelerate`
 
 
 ## References
@@ -39,10 +55,13 @@ Start training the model via
 - [Open CV](https://opencv.org/)
 - [Ultralytics](https://github.com/ultralytics/ultralytics)
 - [Computer Vision Datasets](https://public.roboflow.com/)
+- [ChatGPT]()
+- [Langchain](https://www.langchain.com)
+- [Langchain Library]()
 
 
 ## Author
 
-- Jonah De Smet
+- Jonah De Smet ()
 
 
