@@ -5,9 +5,6 @@ python-dotenv
 langchain
 langchainhub
 langchain_openai
-wikipedia
 langchain-community
 google-api-python-client
-
-transformers
-torch
+wikipedia

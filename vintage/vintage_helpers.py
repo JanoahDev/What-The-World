@@ -3,10 +3,11 @@ import cv2
 import numpy as np
 import base64
 import os
-from dotenv import load_dotenv
 
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -18,7 +19,7 @@ load_dotenv()
 api_url = "https://"+os.getenv("RUNPOD_ID")+"-5000.proxy.runpod.net/generate"
 
 # Function that calls the api with a prompt and returns the image
-def get_image_from_api(prompt):
+def get_image_from_api(prompt: str):
     response = requests.post(api_url, json={'prompt': prompt})
     data = response.json()
     img_str = data['image_url'].split(",")[1]
@@ -38,8 +39,8 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 llm = ChatOpenAI(temperature=0.5, openai_api_key=openai_api_key)
 
 
-# Function that calls the describer agent
-def agent_that_describes(prompt):
+# Function that calls the Vision agent
+def vision_agent(prompt):
     string = prompt
 
     # Create the conversation
@@ -57,13 +58,15 @@ def agent_that_describes(prompt):
     return content
 
 
-# Function that calls the describer agent
-def agent_that_creates(prompt):
-    string = prompt
+# Function that calls the Commentator agent
+def commentator_agent( query: str) -> str:
+    string = query
 
     # Create the conversation
     message = [
-        SystemMessage(content="You get a description of what is happening inside a room. Create an abstract narrative of max 77 characters. This will act as the prompt for a diffusion model which will generate an art frame based on the narrative."),
+        SystemMessage(content="Your objective:You are an advanced language model trained to understand and analyze human behavior based on limited contextual data from object detection. Your task is to provide a detailed analysis of the perceived behavior and possible scenario based on the number of people and items detected in a room."),
+        SystemMessage(content="instructions:Read the object detection data carefully, which includes the number of people and items in the room.Infer a possible scenario or behavior based on the detected objects and their quantities.Provide an insightful explanation of the perceived intentions, emotions, or outcomes based on the inferred scenario."),
+        SystemMessage(content="Example: Object Detection Data: number of people: 5. Items detected: 1 projector, 1 screen, 5 chairs, 1 table. Analysis: The presence of five people in a room with a projector, screen, chairs, and a table suggests a meeting or a presentation scenario. The people are likely gathered to discuss a topic, with one person possibly leading the presentation while the others are participants. The environment indicates a formal or professional setting, and the projector and screen imply that visual aids or slides might be used for the discussion."),
         HumanMessage(content=string)
     ]
 
@@ -74,7 +77,3 @@ def agent_that_creates(prompt):
     content = result.content
 
     return content
-
-
-
-## ---  --- ##

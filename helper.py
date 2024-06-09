@@ -2,10 +2,19 @@ import requests
 import cv2
 import numpy as np
 import base64
+import os
 
-api_url = 'https://qbwvbikcp6d37t-5000.proxy.runpod.net/generate'
+from dotenv import load_dotenv
 
-def get_image_from_api(prompt):
+load_dotenv()
+
+## --- Diffusion Functionality --- ##
+
+#Create the api url based on the Runpod ID
+api_url = "https://"+os.getenv("RUNPOD_ID")+"-5000.proxy.runpod.net/generate"
+
+# Function that calls the api with a prompt and returns the image
+def get_image_from_api(prompt: str):
     response = requests.post(api_url, json={'prompt': prompt})
     data = response.json()
     img_str = data['image_url'].split(",")[1]
@@ -13,11 +22,3 @@ def get_image_from_api(prompt):
     nparr = np.frombuffer(img_data, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     return img
-
-prompt = "A dog wearing a robe in a kings chair"
-image = get_image_from_api(prompt)
-
-# Display the generated image
-cv2.imshow("Generated Image", image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()

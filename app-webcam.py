@@ -4,23 +4,25 @@ import numpy as np
 import math
 from ultralytics import YOLO
 
-from helpers import get_image_from_api, agent_that_describes, agent_that_creates
+from agents import knowledge_aggregator_agent, creative_agent
+
+from helper import get_image_from_api
 
 
-#Vision Agent: Real-time beschrijving van bezoekersgedrag.
-##Voorbeeld: "Twee bezoekers wijzen naar het schilderij."
-
-#Commentator Agent: Biedt context en analyse van de waargenomen gedragingen. Gebruik hiervoor taalmodellen (GPT) met goeie prompting.
-##Voorbeeld: "Deze interactie suggereert een hoge mate van interesse in het kunstwerk."
-
-#Knowledge Aggregator Agent (Langchain): Consolideert de informatie van de Vision en Commentator Agents tot een samenhangend verhaal. Gebruik hiervoor ook taalmodellen.
-##Voorbeeld: "Momenteel bekijken en bespreken twee bezoekers een schilderij, wat wijst op een sterke betrokkenheid bij het kunstwerk."
-
-#Creative Agent: Gebruikt een diffusion model om kunst te genereren op basis van de geaggregeerde kennis.
-##Voorbeeld: Een abstract digitaal kunstwerk dat de energie en focus van de bezoekersdiscussie symboliseert.
+# Initialize the webcam capture
+def initialize_capture(device_index=1):
+    cap = cv2.VideoCapture(device_index)
+    cap.set(3, 640)
+    cap.set(4, 480)
+    return cap
 
 
-# Define the objects
+# Initialize the YOLO model
+def initialize_model(weights_path="yolo-Weights/yolov8n.pt"):
+    return YOLO(weights_path)
+
+
+# Define the detectable objects by YOLO
 classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
               "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
               "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella",
@@ -33,23 +35,13 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "teddy bear", "hair drier", "toothbrush"]
 
 
-
-def initialize_capture(device_index=1):
-    cap = cv2.VideoCapture(device_index)
-    cap.set(3, 640)
-    cap.set(4, 480)
-    return cap
-
-
-def initialize_model(weights_path="yolo-Weights/yolov8n.pt"):
-    return YOLO(weights_path)
-
-
+# Process the frame using the YOLO model
 def process_frame(frame, model):
     results = model(frame, stream=True)
     return results
 
 
+# Annotate the frame with the detected objects
 def annotate_frame(frame, results, classNames, font_scale=2, thickness=3, font_color=(255, 255, 255)):
     object_details = []
     for r in results:
@@ -66,6 +58,7 @@ def annotate_frame(frame, results, classNames, font_scale=2, thickness=3, font_c
     return frame, object_details
 
 
+# Summarize the detected objects
 def summarize_objects(object_details):
     unique_objects = {}
     for confidence, name in object_details:
@@ -76,10 +69,12 @@ def summarize_objects(object_details):
     return unique_objects
 
 
+# Generate a summary string from the unique objects
 def generate_summary_string(unique_objects):
     return " and ".join([f"there are {count} {name}(s)" for name, count in unique_objects.items()])
 
 
+# Main function to run the webcam object detection
 def main():
     cap = initialize_capture()
     model = initialize_model()
@@ -95,22 +90,25 @@ def main():
         results = process_frame(frame, model)
         frame, object_details = annotate_frame(frame, results, classNames)
 
+        # Run function which turns detected objects into a somewhat readable string
         unique_objects = summarize_objects(object_details)
         output_string = generate_summary_string(unique_objects)
-        print("Detected object string: " + output_string)
 
-        output_string = agent_that_describes(output_string)
-        print("Agent generated string: " + output_string)
+        # Feed the detected objects string to the Knowledge aggreator agent
+        generated_string = knowledge_aggregator_agent(output_string)
+        
 
-        output_string = agent_that_creates(output_string)
-        print("Creative agent generated string: " + output_string)
-
+        # Each 5 seconds, generate an image based on the generated string
         current_time = time.time()
         if current_time - last_update_time >= 5:
-            prompt = output_string if output_string else "No objects detected"
-            generated_image = get_image_from_api(prompt)
+            #Check if generated string is not empty
+            creative_prompt = generated_string if generated_string else "No objects detected"
+
+            # Feed the generated narrative to the Vision agent
+            generated_image = get_image_from_api(creative_prompt)
             last_update_time = current_time
 
+        # Create the frame with the detected objects and the generated image
         if generated_image is not None:
             height, width, _ = frame.shape
             generated_image = cv2.resize(generated_image, (width, height))
@@ -118,6 +116,7 @@ def main():
         else:
             combined_image = frame
 
+        # Display the frame
         cv2.imshow('Video and Generated Image', combined_image)
         if cv2.waitKey(1) == ord('q'):
             break
@@ -126,5 +125,6 @@ def main():
     cv2.destroyAllWindows()
 
 
+# Run the main function
 if __name__ == "__main__":
     main()

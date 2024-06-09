@@ -7,42 +7,33 @@ During the lessons, we learned to work with YOLO for object recognition, Langcha
 This project merges all of the above techniques together to become a digital installation.
 
 
-## Explanation of code
+## Explanation of main code
 
-1. 
+1. Clone the github code into a local directory
 
-2. 
+2. Make sure that you have a diffusion runpod running (instructions underneath)
 
+3. From that local directory, install the required packages. (Preferrably inside a virtual environment.)
 
+`pip install -r requirements.txt`
 
-## Building blocks
+4. Set the environment variables:
 
-The working model is based upon a couple of building blocks:
+    - OPENAI_API_KEY   
+    - RUNPOD_ID
 
-- Detecting objects from a webcam stream -> Turn them into a string
-- 
-- Send a string to a diffusion API which is ran on a runpod in this case
-- ...
+5. Run the startup script
 
+    - `python app-webcam.py` -> From your webcam feed
 
-## Training YOLO to detect new objects (optional)
-
-This code is made to work out of the box with the objects and behaviour we trained it to detect. If you wish to train it any further you can always do so following this manual:
-
-1. Install the needed library in conda environment
-
-`pip install ultralytics`
-
-2. Start training the model via
-
-`yolo detect train data=data.yaml model=yolov9c.pt epochs=10 imgsz=640 batch=8`
+    - `python app-video.py` -> From a local video (located in video/yourvideo.mp4)
 
 
 ## Runpod instructions -> Diffusion API
 
 1. Initiate a runpod with a graphics card of choice
 2. Edit your pod and add port 5000 to the exposed HTTP list
-3. In the workspace folder, upload the 2 files from the /building_blocks/runpod_diffusion_server/ Folder
+3. In the workspace folder, upload the 2 files from the `/runpod_building_blocks/` Folder
 4. From that folder, run the following commands:
 5. `chmod +x run_app.sh`
 6. `python3 -m venv venv`
@@ -50,18 +41,31 @@ This code is made to work out of the box with the objects and behaviour we train
 8. `pip install flask transformers diffusers torch accelerate`
 
 
+## Building blocks
+
+The working model is based upon a couple of building blocks:
+
+- Detecting objects from a webcam stream -> Turn them into a string
+
+- Run that string through several AI agents who turn the detected objects & persons into a real narrative
+
+- Send that narrative to a diffusion API which is ran on a runpod in this case
+
+- Receive digital art based upon video feed as feedback
+
+
 ## References
 
 - [Open CV](https://opencv.org/)
 - [Ultralytics](https://github.com/ultralytics/ultralytics)
 - [Computer Vision Datasets](https://public.roboflow.com/)
-- [ChatGPT]()
+- [ChatGPT](https://platform.openai.com/)
 - [Langchain](https://www.langchain.com)
-- [Langchain Library]()
+- [Langchain Library](https://python.langchain.com/v0.2/docs/integrations/tools/wikipedia/)
 
 
 ## Author
 
-- Jonah De Smet ()
+- Jonah De Smet (https://www.linkedin.com/in/jonah-de-smet-550214231/)
 
 
