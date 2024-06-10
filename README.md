@@ -35,10 +35,10 @@ This project merges all of the above techniques together to become a digital ins
 2. Edit your pod and add port 5000 to the exposed HTTP list
 3. In the workspace folder, upload the 2 files from the `/runpod_building_blocks/` Folder
 4. From that folder, run the following commands:
-5. `chmod +x run_app.sh`
-6. `python3 -m venv venv`
-7. `source venv/bin/activate`
-8. `pip install flask transformers diffusers torch accelerate`
+    - `chmod +x run_app.sh`
+    - `python3 -m venv venv`
+    - `source venv/bin/activate`
+    - `pip install flask transformers diffusers torch accelerate`
 
 
 ## Building blocks

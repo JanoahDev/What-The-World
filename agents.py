@@ -50,7 +50,7 @@ def commentator_agent(query: str) -> str:
     # Create the conversation
     message = [
         SystemMessage(content="Your objective:You are an advanced language model trained to understand and analyze human behavior based on limited contextual data from object detection. Your task is to provide a detailed analysis of the perceived behavior and possible scenario based on the number of people and items detected in a room."),
-        SystemMessage(content="instructions:Read the object detection data carefully, which includes the number of people and items in the room.Infer a possible scenario or behavior based on the detected objects and their quantities. Provide an insightful explanation based on the inferred scenario."),
+        SystemMessage(content="instructions:Read the object detection data carefully, which includes the number of people and items in the room. Infer a possible scenario or behavior based on the detected objects and their quantities. Provide an insightful explanation based on the inferred scenario. The total output can be maximum 77 tokens."),
         SystemMessage(content="Example: Object Detection Data: number of people: 5. Items detected: 1 projector, 1 screen, 5 chairs, 1 table. Result: The presence of five people in a room with a projector, screen, chairs, and a table suggests a meeting or a presentation scenario. The people are likely gathered to discuss a topic, with one person possibly leading the presentation while the others are participants. The environment indicates a formal or professional setting, and the projector and screen imply that visual aids or slides might be used for the discussion."),
         HumanMessage(content=query)
     ]
@@ -97,11 +97,10 @@ def knowledge_aggregator_agent(query):
     # 5. Invoke the agent
     result = agent_executor.invoke({"input": query})
 
-    result = str(result)
+    output_text = result['output']
 
     # 6. Send back the result
-    return str(result)
-
+    return output_text
 
 
 # --- Creative agent -> Poging --- #
